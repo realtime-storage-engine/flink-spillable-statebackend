@@ -21,6 +21,7 @@
 package org.apache.flink.runtime.state.heap;
 
 import org.apache.flink.configuration.CheckpointingOptions;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.runtime.state.StateBackendFactory;
@@ -33,7 +34,7 @@ import java.io.IOException;
 public class SpillableStateBackendFactory implements StateBackendFactory<SpillableStateBackend> {
 
 	@Override
-	public SpillableStateBackend createFromConfig(ReadableConfig config, ClassLoader classLoader)
+	public SpillableStateBackend createFromConfig(Configuration config, ClassLoader classLoader)
 		throws IllegalConfigurationException, IOException {
 		final String checkpointDirURI = config.get(CheckpointingOptions.CHECKPOINTS_DIRECTORY);
 		return new SpillableStateBackend(checkpointDirURI).configure(config, classLoader);
