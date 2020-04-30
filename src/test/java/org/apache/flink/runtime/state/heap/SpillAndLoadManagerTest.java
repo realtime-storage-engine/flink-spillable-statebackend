@@ -33,6 +33,7 @@ import org.junit.Test;
 import javax.annotation.Nonnull;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,8 +55,6 @@ public class SpillAndLoadManagerTest {
 
 	private static final long DEFAULT_MAX_MEMORY = 10240;
 	private static final long DEFAULT_GC_TIME = 30000;
-	private static final float DEFAULT_HIGH_WATERMARK_RATIO = 0.6f;
-	private static final long DEFAULT_HIGH_WATERMARK = (long) (DEFAULT_MAX_MEMORY * DEFAULT_HIGH_WATERMARK_RATIO);
 	private static final float DEFAULT_SPILL_SIZE_RATIO = 0.3f;
 	private static final float DEFAULT_LOAD_START_RATIO = 0.2f;
 	private static final long DEFAULT_LOAD_START_SIZE = (long) (DEFAULT_MAX_MEMORY * DEFAULT_LOAD_START_RATIO);
@@ -82,7 +81,6 @@ public class SpillAndLoadManagerTest {
 
 		assertEquals(DEFAULT_MAX_MEMORY, manager.getMaxMemory());
 		assertEquals(DEFAULT_GC_TIME, manager.getGcTimeThreshold());
-		assertEquals(DEFAULT_HIGH_WATERMARK, manager.getHighWatermarkSize());
 		assertEquals(DEFAULT_SPILL_SIZE_RATIO, manager.getSpillSizeRatio(), 1e-9f);
 		assertEquals(DEFAULT_LOAD_START_SIZE, manager.getLoadStartSize());
 		assertEquals(DEFAULT_LOAD_END_SIZE, manager.getLoadEndSize());
@@ -103,7 +101,7 @@ public class SpillAndLoadManagerTest {
 	public void testDecideSpill() {
 		HeapStatusMonitor.MonitorResult monitorResult = new HeapStatusMonitor.MonitorResult(
 			System.currentTimeMillis(), 1, DEFAULT_MAX_MEMORY,
-			DEFAULT_HIGH_WATERMARK + 10,
+				(long) (DEFAULT_MAX_MEMORY * 0.9f),
 			DEFAULT_GC_TIME + 10);
 		testDecideActionBase(monitorResult, SpillAndLoadManagerImpl.ActionResult.ofSpill(DEFAULT_SPILL_SIZE_RATIO));
 	}
@@ -289,13 +287,12 @@ public class SpillAndLoadManagerTest {
 
 	private Configuration buildDefaultConf() {
 		Configuration conf = new Configuration();
-		conf.setLong(SpillableOptions.GC_TIME_THRESHOLD, DEFAULT_GC_TIME);
-		conf.setFloat(SpillableOptions.HIGH_WATERMARK_RATIO, DEFAULT_HIGH_WATERMARK_RATIO);
+		conf.set(SpillableOptions.GC_TIME_THRESHOLD, Duration.ofMillis(DEFAULT_GC_TIME));
 		conf.setFloat(SpillableOptions.SPILL_SIZE_RATIO, DEFAULT_SPILL_SIZE_RATIO);
 		conf.setFloat(SpillableOptions.LOAD_START_RATIO, DEFAULT_LOAD_START_RATIO);
 		conf.setFloat(SpillableOptions.LOAD_END_RATIO, DEFAULT_LOAD_END_RATIO);
-		conf.setLong(SpillableOptions.TRIGGER_INTERVAL, DEFAULT_TRIGGER_INTERVAL);
-		conf.setLong(SpillableOptions.RESOURCE_CHECK_INTERVAL, DEFAULT_RESOURCE_CHECK_INTERVAL);
+		conf.set(SpillableOptions.TRIGGER_INTERVAL, Duration.ofMillis(DEFAULT_TRIGGER_INTERVAL));
+		conf.set(SpillableOptions.RESOURCE_CHECK_INTERVAL, Duration.ofMillis(DEFAULT_RESOURCE_CHECK_INTERVAL));
 
 		return conf;
 	}

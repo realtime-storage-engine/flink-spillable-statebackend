@@ -25,6 +25,8 @@ import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.runtime.state.heap.space.SpaceAllocator;
 
+import java.time.Duration;
+
 /**
  * Options for space allocation.
  */
@@ -52,26 +54,18 @@ public class SpillableOptions {
 		.withDescription("Maximum number of mmap files that can be used.");
 
 	/** Interval to check heap status. */
-	public static final ConfigOption<Long> HEAP_STATUS_CHECK_INTERVAL = ConfigOptions
+	public static final ConfigOption<Duration> HEAP_STATUS_CHECK_INTERVAL = ConfigOptions
 		.key("state.backend.spillable.heap-status.check-interval")
-		.longType()
-		.defaultValue(60000L)
+		.durationType()
+		.defaultValue(Duration.ofMinutes(1L))
 		.withDescription("Interval to check heap status.");
 
 	/** Threshold of gc time to trigger state spill.  */
-	public static final ConfigOption<Long> GC_TIME_THRESHOLD = ConfigOptions
+	public static final ConfigOption<Duration> GC_TIME_THRESHOLD = ConfigOptions
 		.key("state.backend.spillable.gc-time.threshold")
-		.longType()
-		.defaultValue(2000L)
+		.durationType()
+		.defaultValue(Duration.ofSeconds(2L))
 		.withDescription("If garbage collection time exceeds this threshold, state will be spilled.");
-
-	/** Watermark under JVM heap usage is tried to control. */
-	public static final ConfigOption<Float> HIGH_WATERMARK_RATIO = ConfigOptions
-		.key("state.backend.spillable.high-watermark.ratio")
-		.floatType()
-		.defaultValue(0.5f)
-		.withDescription("Watermark under which JVM heap usage is tried to control. Note this is not"
-			+ " guaranteed if garbage collection implementation does not provide memory usage after gc.");
 
 	/** Percentage of retained state size to spill in a turn. */
 	public static final ConfigOption<Float> SPILL_SIZE_RATIO = ConfigOptions
@@ -95,17 +89,17 @@ public class SpillableOptions {
 		.withDescription("Memory usage can't exceed this watermark after state load.");
 
 	/** Interval between continuous spill/load.   */
-	public static final ConfigOption<Long> TRIGGER_INTERVAL = ConfigOptions
+	public static final ConfigOption<Duration> TRIGGER_INTERVAL = ConfigOptions
 		.key("state.backend.spillable.trigger-interval")
-		.longType()
-		.defaultValue(60000L)
+		.durationType()
+		.defaultValue(Duration.ofMinutes(1L))
 		.withDescription("Interval to trigger continuous spill/load.");
 
 	/** Interval to check resource. */
-	public static final ConfigOption<Long> RESOURCE_CHECK_INTERVAL = ConfigOptions
+	public static final ConfigOption<Duration> RESOURCE_CHECK_INTERVAL = ConfigOptions
 		.key("state.backend.spillable.resource-check.interval")
-		.longType()
-		.defaultValue(10000L)
+		.durationType()
+		.defaultValue(Duration.ofSeconds(10L))
 		.withDescription("Interval to check resource. High frequence will degrade performance but"
 			+ " be more sensitive to memory change.");
 
@@ -118,7 +112,7 @@ public class SpillableOptions {
 		"the spilled states and make them gc faster.");
 
 	public static final ConfigOption[] SUPPORTED_CONFIG = new ConfigOption[]{
-		SPACE_TYPE, CHUNK_SIZE, MAX_MMAP_FILES, HEAP_STATUS_CHECK_INTERVAL, GC_TIME_THRESHOLD, HIGH_WATERMARK_RATIO,
+		SPACE_TYPE, CHUNK_SIZE, MAX_MMAP_FILES, HEAP_STATUS_CHECK_INTERVAL, GC_TIME_THRESHOLD,
 		SPILL_SIZE_RATIO, LOAD_START_RATIO, LOAD_END_RATIO, TRIGGER_INTERVAL, RESOURCE_CHECK_INTERVAL, CANCEL_CHECKPOINT
 	};
 
@@ -129,7 +123,6 @@ public class SpillableOptions {
 		conf.set(MAX_MMAP_FILES, readableConfig.get(MAX_MMAP_FILES));
 		conf.set(HEAP_STATUS_CHECK_INTERVAL, readableConfig.get(HEAP_STATUS_CHECK_INTERVAL));
 		conf.set(GC_TIME_THRESHOLD, readableConfig.get(GC_TIME_THRESHOLD));
-		conf.set(HIGH_WATERMARK_RATIO, readableConfig.get(HIGH_WATERMARK_RATIO));
 		conf.set(SPILL_SIZE_RATIO, readableConfig.get(SPILL_SIZE_RATIO));
 		conf.set(LOAD_START_RATIO, readableConfig.get(LOAD_START_RATIO));
 		conf.set(LOAD_END_RATIO, readableConfig.get(LOAD_END_RATIO));

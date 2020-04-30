@@ -308,7 +308,7 @@ public class SpillableStateBackend extends AbstractStateBackend implements Confi
 	}
 
 	private void initHeapStatusMonitor() {
-		long checkInterval = configuration.get(SpillableOptions.HEAP_STATUS_CHECK_INTERVAL);
+		long checkInterval = configuration.get(SpillableOptions.HEAP_STATUS_CHECK_INTERVAL).toMillis();
 		Preconditions.checkArgument(checkInterval > 0,
 			"Heap status check interval should be larger than 0.");
 		HeapStatusMonitor.initStatusMonitor(checkInterval);

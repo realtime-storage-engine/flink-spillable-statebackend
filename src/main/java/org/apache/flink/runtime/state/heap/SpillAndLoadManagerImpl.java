@@ -58,7 +58,6 @@ public class SpillAndLoadManagerImpl implements SpillAndLoadManager {
 
 	private final boolean cancelCheckpoint;
 	private final long gcTimeThreshold;
-	private final float highWatermarkRatio;
 	private final float spillSizeRatio;
 	private final float loadStartRatio;
 	private final float loadEndRatio;
@@ -66,7 +65,6 @@ public class SpillAndLoadManagerImpl implements SpillAndLoadManager {
 	private final long resourceCheckInterval;
 
 	private final long maxMemory;
-	private final long highWatermarkSize;
 	private final long loadStartSize;
 	private final long loadEndSize;
 
@@ -84,17 +82,10 @@ public class SpillAndLoadManagerImpl implements SpillAndLoadManager {
 		this.checkpointManager = Preconditions.checkNotNull(checkpointManager);
 
 		this.cancelCheckpoint = configuration.get(SpillableOptions.CANCEL_CHECKPOINT);
-		this.gcTimeThreshold = configuration.get(SpillableOptions.GC_TIME_THRESHOLD);
+		this.gcTimeThreshold = configuration.get(SpillableOptions.GC_TIME_THRESHOLD).toMillis();
 
-		float localHighWaterMarkRatio = configuration.get(SpillableOptions.HIGH_WATERMARK_RATIO);
 		float localLoadStartRatio = configuration.get(SpillableOptions.LOAD_START_RATIO);
 		float localLoadEndRatio = configuration.get(SpillableOptions.LOAD_END_RATIO);
-		if (floatSum(localLoadEndRatio, 0.1f) > localHighWaterMarkRatio) {
-			float adjustedEndRate = floatSub(localHighWaterMarkRatio, 0.1f);
-			LOG.warn("The configured load end ratio {} is too big, will use {} instead",
-				localLoadEndRatio, adjustedEndRate);
-			localLoadEndRatio = adjustedEndRate;
-		}
 		// Check and make sure loadStartSize < loadEndSize < spillThreshold after separate adjustment
 		if (localLoadStartRatio >= localLoadEndRatio) {
 			LOG.warn("Load start ratio {} >= end ratio {} even with adjustment, "
@@ -104,24 +95,15 @@ public class SpillAndLoadManagerImpl implements SpillAndLoadManager {
 					SpillableOptions.LOAD_END_RATIO.defaultValue());
 			localLoadStartRatio = SpillableOptions.LOAD_START_RATIO.defaultValue();
 			localLoadEndRatio = SpillableOptions.LOAD_END_RATIO.defaultValue();
-			if (floatSum(localLoadEndRatio, 0.1f) > localHighWaterMarkRatio) {
-				LOG.warn("Load end ratio {} is too close to spill ratio {} after adjustment," +
-					"will use default value {} for spill ratio",
-					localLoadEndRatio, localHighWaterMarkRatio,
-					SpillableOptions.SPILL_SIZE_RATIO.defaultValue());
-				localHighWaterMarkRatio = SpillableOptions.SPILL_SIZE_RATIO.defaultValue();
-			}
 		}
-		this.highWatermarkRatio = localHighWaterMarkRatio;
 		this.loadStartRatio = localLoadStartRatio;
 		this.loadEndRatio = localLoadEndRatio;
 		this.spillSizeRatio = configuration.get(SpillableOptions.SPILL_SIZE_RATIO);
 
-		this.triggerInterval = configuration.get(SpillableOptions.TRIGGER_INTERVAL);
-		this.resourceCheckInterval = configuration.get(SpillableOptions.RESOURCE_CHECK_INTERVAL);
+		this.triggerInterval = configuration.get(SpillableOptions.TRIGGER_INTERVAL).toMillis();
+		this.resourceCheckInterval = configuration.get(SpillableOptions.RESOURCE_CHECK_INTERVAL).toMillis();
 
 		this.maxMemory = heapStatusMonitor.getMaxMemory();
-		this.highWatermarkSize = (long) (maxMemory * highWatermarkRatio);
 		this.loadStartSize = (long) (maxMemory * loadStartRatio);
 		this.loadEndSize = (long) (maxMemory * loadEndRatio);
 
@@ -402,11 +384,6 @@ public class SpillAndLoadManagerImpl implements SpillAndLoadManager {
 
 	public float getSpillSizeRatio() {
 		return spillSizeRatio;
-	}
-
-	@VisibleForTesting
-	long getHighWatermarkSize() {
-		return highWatermarkSize;
 	}
 
 	@VisibleForTesting
