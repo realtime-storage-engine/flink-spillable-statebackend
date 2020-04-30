@@ -27,7 +27,7 @@ under the License.
 	<groupId>org.apache.flink</groupId>
 	<artifactId>flink-statebackend-heap-spillable</artifactId>
 	<name>flink-statebackend-heap-spillable</name>
-	<version>1.0-SNAPSHOT</version>
+	<version>${flink.version}</version>
 
 	<licenses>
 		<license>
