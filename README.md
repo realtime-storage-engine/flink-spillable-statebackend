@@ -1,4 +1,4 @@
-# Apache Flink SpillableKeyedStateBackend
+# A Spillable State Backend for Apache Flink
 
 ## Introduction
 
@@ -10,17 +10,18 @@ However, along with the advantage, `HeapKeyedStateBackend` also has its shortcom
 * Data flood caused by burst traffic.
 * Data accumulation caused by source malfunction.
 
-To resolve this problem, we proposed `SpillableKeyedStateBackend` to support spilling state data to disk before heap memory is exhausted. We will monitor the heap usage and choose the coldest data to spill, and reload them when heap memory is regained after data removing or TTL expiration, automatically.
+To resolve this problem, we proposed a new `SpillableKeyedStateBackend` to support spilling state data to disk before heap memory is exhausted. We will monitor the heap usage and choose the coldest data to spill, and reload them when heap memory is regained after data removing or TTL expiration, automatically.
 
-Similar to the idea of Anti-Caching approach [1] proposed for database, the main difference between supporting data spilling in `HeapKeyedStateBackend` and adding a big cache for `RocksDBKeyedStateBackend` is now memory is the primary storage device than disk. Data is either in memory or on disk instead of in both places at the same time thus saving the cost to prevent inconsistency, and rather than starting with data on disk and reading hot data into cache, data starts in memory and cold data is evicted to disk.
+Similar to the idea of [Anti-Caching approach](http://www.vldb.org/pvldb/vol6/p1942-debrabant.pdf) proposed for database, the main difference between supporting data spilling in `HeapKeyedStateBackend` and adding a big cache for `RocksDBKeyedStateBackend` is now memory is the primary storage device than disk. Data is either in memory or on disk instead of in both places at the same time thus saving the cost to prevent inconsistency, and rather than starting with data on disk and reading hot data into cache, data starts in memory and cold data is evicted to disk.
 
-More details please refer to [FLIP-50](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=125307861), and we are upstreaming the work in [FLINK-12692](https://issues.apache.org/jira/browse/FLINK-12692)
+More details please refer to [FLIP-50](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=125307861), and the upstreaming work is in progress through [FLINK-12692](https://issues.apache.org/jira/browse/FLINK-12692).
+We setup this repository as a preview version for those who want to try it out before Apache Flink officially supports it.
 
-## Building
+## How to build the binary
 
-Only support Flink 1.10.x and later releases.
+Please note that we only support Flink 1.10.x and later releases.
 
-Builds for Flink 1.10.x releases
+You can use the below commands to build a binary to run with Flink 1.10.x releases:
 
 ```
 git clone https://github.com/realtime-storage-engine/flink-spillable-statebackend.git
@@ -29,7 +30,7 @@ git checkout origin/release-1.10
 mvn clean package -Dflink.version=<flink version>
 ```
 
-Builds for later releases
+And the below commands against current Flink master:
 
 ```
 git clone https://github.com/realtime-storage-engine/flink-spillable-statebackend.git
@@ -37,24 +38,25 @@ cd flink-spillable-statebackend/flink-statebackend-heap-spillable
 mvn clean package -Dflink.version=<flink.version>
 ```
 
-JAR file is now installed in `target` with name `flink-statebackend-heap-spillable-<flink version>`. For example, for Flink 1.10.1, it will be `flink-statebackend-heap-spillable-1.10.1.jar`
+The JAR file will be generated in `target` directory with name of `flink-statebackend-heap-spillable-<flink version>`.
+For example, `flink-statebackend-heap-spillable-1.10.1.jar` for Flink 1.10.1.
 
-## Usage
+## How to deploy
 
-1. copy JAR file to the `lib` directory of Flink binary package
+First of all, copy the compiled JAR file into the `lib` directory of your Flink deployment
 
-2. set backend to `SpillableStateBackend`, and there are two approaches
+And then set your state backend to `SpillableStateBackend`. There are two ways to achieve this:
 
-    * set `state.backend` to `org.apache.flink.runtime.state.heap.SpillableStateBackendFactory` in flink-conf.yaml, or
+1. Set `state.backend` to `org.apache.flink.runtime.state.heap.SpillableStateBackendFactory` in flink-conf.yaml
     
-    * set via API like
+2. Set via java API
 
 ```java
 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 env.setStateBackend(new SpillableStateBackend(checkpointPath));
 ```
 
-To set via API, first install the package on local and add the following dependency to you project:
+And you need to add the below dependency to your application before compilation:
 
 ```xml
 <dependency>
@@ -64,7 +66,7 @@ To set via API, first install the package on local and add the following depende
 </dependency>
 ```
 
-## Configuration
+## Configurations
 
 | Key | Default | Type | Description |
 | -------------     | ------ | --------- | ---- |
@@ -77,36 +79,35 @@ To set via API, first install the package on local and add the following depende
 |state.backend.spillable.trigger-interval|1min|Duration|Interval to trigger continuous spill/load|
 |state.backend.spillable.cancel.checkpoint|true|Boolean|Whether to cancel running checkpoint before spill. Cancelling checkpoints can release the spilled states and make them gc faster|
 
-## Benchmark
+## Performance
 
-We use a WordCount job to compare performance of `HeapKeyedStateBackend`, `SpillableKeyedStateBackend` and `RocksDBKeyedStateBackend`. Here are the details setup
+We use a `WordCount` benchmark to compare performance of `HeapKeyedStateBackend`, `SpillableKeyedStateBackend` and `RocksDBKeyedStateBackend`.
+You can find the source code of the benchmark as well as how to execute it in the `flink-spillable-benchmark` module of this project.
+
+With the below hardware environment and job setup:
 
 * Machine
-
 	* 96 Cores, Intel(R) Xeon(R) Platinum 8163 CPU @ 2.50GHz
 	* 512GB memory
 	* 12 x 7.3T HDD storage
 * Job
-	* one slot per TaskManager
-	* job parallelism is 1
-	* disable slot sharing and operator chaining
-	* checkpoint interval 1min
+	* One slot per TaskManager
+	* Job parallelism: 1
+	* Disable slot sharing and operator chaining
+	* Checkpoint interval: 1min
 	* 20 Million keys, and each key is a 16-length `String`
-	* word send rate 1M word/s
+	* Word sending rate: 1M words/s
 	
 * StateBackend
 	* `HeapKeyedStateBackend`: 10GB heap
-	* `SpillableStateBackend`: 3GB heap, and use default configuration
-	* `RocksDBStateBackend`: 3GB block cache, disable `state.backend.rocksdb.memory.managed
-`, and other configurations are default
+	* `SpillableStateBackend`: 3GB heap, with the default configuration
+	* `RocksDBStateBackend`: 3GB block cache, disable `state.backend.rocksdb.memory.managed`, all other configurations with default setting
 
-Benchmark result
+we got the below result:
 
 | StateBackend | TPS | Description |
 | -------------     | ---------- | ---- |
 |`HeapKeyedStateBackend`|720K records/s||
-|`SpillableStateBackend`|130K records/s|It is measured after spill is over, and job is in stable. states in 47 key groups are spilled, which is about 36.71% of the total  (128 key groups)|
+|`SpillableStateBackend`|130K records/s|47 out of 128 (36.71%) key groups are spilled to disk|
 |`RocksDBStateBackend`|60K records/s||
 
-## References
-[1] J. DeBrabant, A. Pavlo, S. Tu, M. Stonebraker, and S. Zdonik, “Anti-caching: A new approach to database management system architecture,” Proc. VLDB Endowment, vol. 6, pp. 1942–1953, 2013.
