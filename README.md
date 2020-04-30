@@ -24,7 +24,7 @@ Builds for Flink 1.10.x releases
 
 ```
 git clone https://github.com/realtime-storage-engine/flink-spillable-statebackend.git
-cd flink-spillable-statebackend
+cd flink-spillable-statebackend/flink-statebackend-heap-spillable
 git checkout origin/release-1.10
 mvn clean package -Dflink.version=<flink version>
 ```
@@ -33,7 +33,7 @@ Builds for later releases
 
 ```
 git clone https://github.com/realtime-storage-engine/flink-spillable-statebackend.git
-cd flink-spillable-statebackend
+cd flink-spillable-statebackend/flink-statebackend-heap-spillable
 mvn clean package -Dflink.version=<flink.version>
 ```
 
