@@ -23,7 +23,6 @@ package org.apache.flink.runtime.state.heap;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.state.AggregatingStateDescriptor;
-import org.apache.flink.api.common.state.FoldingStateDescriptor;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
@@ -75,8 +74,7 @@ public class SpillableKeyedStateBackend<K> extends HeapKeyedStateBackend<K> {
 			Tuple2.of(ListStateDescriptor.class, (StateFactory) SpillableListState::create),
 			Tuple2.of(MapStateDescriptor.class, (StateFactory) SpillableMapState::create),
 			Tuple2.of(AggregatingStateDescriptor.class, (StateFactory) SpillableAggregatingState::create),
-			Tuple2.of(ReducingStateDescriptor.class, (StateFactory) SpillableReducingState::create),
-			Tuple2.of(FoldingStateDescriptor.class, (StateFactory) SpillableFoldingState::create)
+			Tuple2.of(ReducingStateDescriptor.class, (StateFactory) SpillableReducingState::create)
 		).collect(Collectors.toMap(t -> t.f0, t -> t.f1));
 
 	/**

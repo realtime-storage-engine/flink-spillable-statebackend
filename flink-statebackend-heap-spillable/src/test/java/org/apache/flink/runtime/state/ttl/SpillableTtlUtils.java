@@ -35,7 +35,6 @@ public class SpillableTtlUtils {
 			new TtlMapStatePerElementTestContext(),
 			new TtlMapStatePerNullElementTestContext(),
 			new TtlAggregatingStateTestContext(),
-			new TtlReducingStateTestContext(),
-			new TtlFoldingStateTestContext());
+			new TtlReducingStateTestContext());
 	}
 }
