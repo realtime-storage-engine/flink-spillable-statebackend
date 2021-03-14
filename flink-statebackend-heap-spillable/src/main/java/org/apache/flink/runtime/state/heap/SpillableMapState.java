@@ -30,10 +30,7 @@ import org.apache.flink.queryablestate.client.state.serialization.KvStateSeriali
 import org.apache.flink.runtime.state.internal.InternalMapState;
 import org.apache.flink.util.Preconditions;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * A {@link MapState} backed by spillable backend.
@@ -189,7 +186,7 @@ public class SpillableMapState<K, N, UK, UV>
 		Map<UK, UV> userMap = stateMap.get(key, namespace);
 
 		if (userMap == null) {
-			return null;
+			return Collections.emptySet();
 		}
 
 		return stateMap instanceof CopyOnWriteStateMap ? userMap.entrySet() :
@@ -212,7 +209,7 @@ public class SpillableMapState<K, N, UK, UV>
 		Map<UK, UV> userMap = stateMap.get(key, namespace);
 
 		if (userMap == null) {
-			return null;
+			return Collections.emptySet();
 		}
 
 		return stateMap instanceof CopyOnWriteStateMap ? userMap.keySet() :
@@ -251,7 +248,7 @@ public class SpillableMapState<K, N, UK, UV>
 		Map<UK, UV> userMap = stateMap.get(key, namespace);
 
 		if (userMap == null) {
-			return null;
+			return Collections.emptySet();
 		}
 
 		return stateMap instanceof CopyOnWriteStateMap ? userMap.values() :
@@ -290,7 +287,7 @@ public class SpillableMapState<K, N, UK, UV>
 		Map<UK, UV> userMap = stateMap.get(key, namespace);
 
 		if (userMap == null) {
-			return null;
+			return Collections.emptyIterator();
 		}
 
 		return stateMap instanceof CopyOnWriteStateMap ? userMap.entrySet().iterator() :

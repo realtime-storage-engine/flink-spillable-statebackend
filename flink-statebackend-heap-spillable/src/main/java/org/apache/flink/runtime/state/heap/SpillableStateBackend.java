@@ -31,7 +31,7 @@ import org.apache.flink.runtime.execution.Environment;
 import org.apache.flink.runtime.query.TaskKvStateRegistry;
 import org.apache.flink.runtime.state.AbstractKeyedStateBackend;
 import org.apache.flink.runtime.state.AbstractStateBackend;
-import org.apache.flink.runtime.state.CheckpointStorage;
+import org.apache.flink.runtime.state.CheckpointStorageAccess;
 import org.apache.flink.runtime.state.CompletedCheckpointStorageLocation;
 import org.apache.flink.runtime.state.ConfigurableStateBackend;
 import org.apache.flink.runtime.state.DefaultOperatorStateBackendBuilder;
@@ -143,7 +143,7 @@ public class SpillableStateBackend extends AbstractStateBackend implements Confi
 		return new SpillableKeyedStateBackendBuilder<>(
 			kvStateRegistry,
 			keySerializer,
-			env.getUserClassLoader(),
+			env.getUserCodeClassLoader().asClassLoader(),
 			numberOfKeyGroups,
 			keyGroupRange,
 			env.getExecutionConfig(),
@@ -166,7 +166,7 @@ public class SpillableStateBackend extends AbstractStateBackend implements Confi
 		// TODO whether to support sync snapshot
 		final boolean asyncSnapshots = true;
 		return new DefaultOperatorStateBackendBuilder(
-			env.getUserClassLoader(),
+			env.getUserCodeClassLoader().asClassLoader(),
 			env.getExecutionConfig(),
 			asyncSnapshots,
 			stateHandles,
@@ -179,7 +179,7 @@ public class SpillableStateBackend extends AbstractStateBackend implements Confi
 	}
 
 	@Override
-	public CheckpointStorage createCheckpointStorage(JobID jobId) throws IOException {
+	public CheckpointStorageAccess createCheckpointStorage(JobID jobId) throws IOException {
 		return checkpointStreamBackend.createCheckpointStorage(jobId);
 	}
 
